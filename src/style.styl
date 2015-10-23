@@ -1,0 +1,45 @@
+#ar-container
+  font-size 18px
+
+#ar-networks-help
+  margin-top 7px
+  padding 4px
+  border 1px solid #ccc
+  border-radius 5px
+  
+  :first-child ::before
+    content "!"
+    color  #aaa
+    font-size 30px
+    font-weight bold
+    float left
+    padding 10px
+    margin-right 7px
+
+  > div
+    font-size 14px
+    padding 2px
+  
+  input
+    margin-right 4px
+    
+  input, label
+    vertical-align middle
+
+#ar-donate
+  font-weight bold
+
+#ar-enabled-label
+  font-weight normal
+
+#ar-enabled-check:not(:checked) ~ #ar-enabled-label
+  color red
+
+  &::after
+    content "Not enabled"
+
+#ar-enabled-check:checked ~ #ar-enabled-label
+  color green
+
+  &::after
+    content "Enabled"

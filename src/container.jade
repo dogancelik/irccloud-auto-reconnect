@@ -1,0 +1,26 @@
+#ar-container.settingsContents.settingsContents__autoreconnect(data-section='autoreconnect')
+  h2.settingsTitle
+    span Auto Reconnect&nbsp;
+    input#ar-enabled-check(type='checkbox')
+    | &nbsp;
+    label#ar-enabled-label(for='ar-enabled-check')
+  p.explanation Select the networks you want to connect when you open a new page.
+  p.explanation This script is intended at non-subscribers only.
+  h3#ar-networks-header Networks
+  p.explanation: a(id='ar-networks-clear-selected', href='javascript:void(0)') Clear radio button check
+  div#ar-networks-container
+  div#ar-networks-help
+    div
+      input(type='radio', id='ar-help-radio', checked='true')
+      label(for='ar-help-radio') Checked radio button is the network you want to select on startup.
+    div
+      input(type='checkbox', id='ar-help-checkbox', checked='true')
+      label(for='ar-help-checkbox') Checked checkbox is the network you want to auto-reconnect when you are disconnected.
+  hr
+  p#ar-donate.explanation
+    | If you like this script, please&nbsp;
+    a(href='http://dogancelik.com/donate.html', target='_blank') consider a donation
+  p.explanation
+    a(href='https://github.com/dogancelik/irccloud-auto-reconnect', target='_blank') Source code
+    | &nbsp;-&nbsp;
+    a(href='https://github.com/dogancelik/irccloud-auto-reconnect/issues', target='_blank') Report bug / Request feature
