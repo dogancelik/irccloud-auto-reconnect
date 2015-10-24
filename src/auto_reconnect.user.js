@@ -23,39 +23,43 @@ var Settings = {
   }
 };
 
-var networks, enabled, activated, selected;
+var AR_ENABLED = 'enabled';
+var AR_ACTIVATED = 'activated';
+var AR_NETWORK = 'selected.network';
+var AR_CHANNEL = 'selected.channel';
 
-function getNetworks() {
-  return $('.bufferList .connection').map(function (idx) {
-    var buffer = this.querySelector('span.buffer');
+var enabled, activated, focusedNetwork, focusedChannel;
 
-    return {
-      buffer: buffer,
-      label: $(this).find('.buffer .label').first().text().trim(),
-      index: idx
-    };
-  }).get();
-}
-
-function createListItem (id, name) {
+function createListItem (id, title) {
+  var prefix = 'ar-network-list-item-';
   var li = $('<tr>\
-    <td><input type="radio" name="ar-networks-selected"></td>\
-    <td><input type="checkbox" id="' + id + '"></td>\
-    <th><label for="' + id + '">' + name + '</label></th>\
+    <td><input type="radio" name="ar-networks-selected" data-id="' + id + '"></td>\
+    <td><input type="checkbox" id="' + prefix + id + '" data-id="' + id + '"></td>\
+    <th><label for="' + prefix + id + '">' + title + '</label></th>\
     </tr>');
   return li;
 }
 
-function createList(networks) {
+function createList() {
   var ul = $('<table>').attr('id', 'ar-networks-list').addClass('checkboxForm');
-
-  networks.forEach(function(network) {
-    var id = 'ar-network-list-item-' + network.index;
-    var name = network.label;
-    createListItem(id, name).appendTo(ul);
+  SESSION.connections.forEach(function (conn) {
+    createListItem(conn.id.toString(), conn.getTitle()).appendTo(ul);
   });
-
   return ul;
+}
+
+function populateChanList(el) {
+  var option = $('<option value=""></option>');
+  SESSION.buffers.forEach(function (buff) {
+    option.clone().text(buff.getName()).attr('value', buff.id.toString()).appendTo(el);
+  });
+  return el;
+}
+
+var DATA_ID = 'id';
+
+function findById(el, id) {
+  return el.filter('[data-' + DATA_ID + '="' + id + '"]');
 }
 
 function embedStyle() {
@@ -77,7 +81,7 @@ function init() {
   var container = createContainer();
 
   container.find('#ar-enabled-check').on('change', function() {
-    Settings.set('enabled', this.checked);
+    Settings.set(AR_ENABLED, this.checked);
   }).prop('checked', JSON.parse(Settings.get('enabled', true)));
 
   if (window.location.hash === '#?/settings=autoreconnect') {
@@ -85,31 +89,60 @@ function init() {
     menu.find('a')[0].click();
   }
 
-  networks = getNetworks();
-  enabled = JSON.parse(Settings.get('enabled'));
-  activated = Settings.get('activated', '').split(',').filter(function (i) { return !!i; }).map(function (i) { return parseInt(i, 10); });
-  selected = parseInt(Settings.get('selected', ''), 10);
+  enabled = JSON.parse(Settings.get(AR_ENABLED));
+  activated = Settings.get(AR_ACTIVATED, '').split(',').filter(function (i) { return !!i; }).map(function (i) { return parseInt(i, 10); });
+  focusedNetwork = parseInt(Settings.get(AR_NETWORK, ''), 10);
+  focusedChannel = parseInt(Settings.get(AR_CHANNEL, ''), 10);
 
-  var list = createList(networks);
+  // Populate network list
+  var list = createList();
+  container.find('#ar-networks-clean').find('tr').detach().prependTo(list.find('tr:first').parent());
   list.appendTo(container.find('#ar-networks-container'));
+
+  // Populate channel list
+  var chanList = container.find('#ar-channel-input');
+  populateChanList(chanList);
 
   var checkboxes = list.find('input:checkbox');
   var radios = list.find('input:radio');
 
   // Networks to auto reconnect
-  activated.forEach(function (i) {
-    checkboxes.eq(i).prop('checked', true);
+  activated.forEach(function (id) {
+    var idBox = findById(checkboxes, id);
+    idBox.prop('checked', true);
     if (enabled) {
-      networks[i].buffer.click();
-      cbc().reconnect();
+      try {
+        SESSION.connections.get(id).reconnect();
+      } catch (e) {
+        console.error("Can't find connection ID: " + id);
+      }
     }
   });
 
-  // One network to select
-  if (!isNaN(selected)) {
-    radios.eq(selected).prop('checked', true);
+  // One network to focus
+  if (!isNaN(focusedNetwork) && isNaN(focusedChannel)) {
+    var selectedRadio = findById(radios, focusedNetwork);
+    selectedRadio.prop('checked', true);
     if (enabled) {
-      networks[selected].buffer.click();
+      try {
+        SESSION.connections.get(focusedNetwork).select();
+      } catch (e) {
+        console.error("Can't find connection ID: " + focusedNetwork);
+      }
+    }
+  }
+
+  // One channel to focus
+  if (!isNaN(focusedChannel)) {
+    var options = chanList.children();
+    var index = options.index(chanList.find('option[value="' + focusedChannel + '"]'));
+    options.eq(index).prop('selected', true);
+    if (enabled) {
+      try {
+        SESSION.buffers.get(focusedChannel).select();
+      } catch (e) {
+        console.error("Can't find channel ID: " + focusedChannel);
+      }
     }
   }
 
@@ -117,20 +150,35 @@ function init() {
     var checkedBoxes = [];
     checkboxes.each(function() {
       if (this.checked) {
-        checkedBoxes.push(checkboxes.index(this));
-      }     
+        var id = $(this).data(DATA_ID);
+        checkedBoxes.push(id);
+      }
     });
     Settings.set('activated', checkedBoxes.join());
   });
-
+ 
   radios.on('change', function () {
-    Settings.set('selected', radios.index(this).toString());
+    var id = $(this).data(DATA_ID);
+    Settings.set(AR_NETWORK, id);
   });
 
-  container.find('#ar-networks-clear-selected').on('click', function () {
+  chanList.on('change', function () {
+    Settings.set(AR_CHANNEL, chanList.val());
+  });
+
+  container.find('#ar-networks-clear-focused').on('click', function () {
     radios.prop('checked', false);
-    Settings.remove('selected', '');
-  })
+    Settings.remove(AR_NETWORK);
+  });
+
+  container.find('#ar-networks-clear-activated').on('click', function () {
+    checkboxes.prop('checked', false);
+    Settings.remove(AR_ACTIVATED);
+  });
+
+  container.find('#ar-help-checkbox').on('change', function () {
+    this.checked = true;
+  });
 }
 
 (function checkSession () {

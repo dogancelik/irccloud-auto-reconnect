@@ -7,15 +7,23 @@
   p.explanation Select the networks you want to connect when you open a new page.
   p.explanation This script is intended for non-subscribers.
   h3#ar-networks-header Networks
-  p.explanation: a(id='ar-networks-clear-selected', href='javascript:void(0)') Clear radio button check
+  table#ar-networks-clean(style='display:none')
+    tr
+      td: a(id='ar-networks-clear-focused', href='javascript:void(0)') ×
+      td: a(id='ar-networks-clear-activated', href='javascript:void(0)') ×
   div#ar-networks-container
   div#ar-networks-help
     div
       input(type='radio', id='ar-help-radio', checked='true')
-      label(for='ar-help-radio') Checked radio button is the network you want to select on startup.
+      label(for='ar-help-radio') Checked radio button is the network you want to focus on startup.
     div
       input(type='checkbox', id='ar-help-checkbox', checked='true')
       label(for='ar-help-checkbox') Checked checkbox is the network you want to auto-reconnect when you are disconnected.
+  h3#ar-channel-header Channel
+  p.explanation Select a channel to focus to this channel on startup.
+  p.form
+    select#ar-channel-input.input
+      option(value='') Disabled
   hr
   p#ar-donate.explanation
     | If you like this script, please&nbsp;
