@@ -80,14 +80,14 @@ function init() {
   var menu = createMenu();
   var container = createContainer();
 
+  var hashName = 'autoreconnect';
+  if (window.location.hash === '#?/settings=' + hashName) {
+    SESSIONVIEW.showSettings(hashName);
+  }
+
   container.find('#ar-enabled-check').on('change', function() {
     Settings.set(AR_ENABLED, this.checked);
   }).prop('checked', JSON.parse(Settings.get('enabled', true)));
-
-  if (window.location.hash === '#?/settings=autoreconnect') {
-    window.location.hash = '#?/settings';
-    menu.find('a')[0].click();
-  }
 
   enabled = JSON.parse(Settings.get(AR_ENABLED));
   activated = Settings.get(AR_ACTIVATED, '').split(',').filter(function (i) { return !!i; }).map(function (i) { return parseInt(i, 10); });
